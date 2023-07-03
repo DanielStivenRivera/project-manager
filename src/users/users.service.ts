@@ -1,51 +1,46 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { InjectModel } from '@nestjs/mongoose';
+import { Users } from './schema/user.schema';
+import { Model } from 'mongoose';
+import { hashPassword } from '../shared/encrypt-utils';
 
 @Injectable()
 export class UsersService {
-  constructor(
-    @InjectRepository(User) private userRepository: Repository<User>,
-  ) {}
+  constructor(@InjectModel(Users.name) private userModel: Model<Users>) {}
 
   async create(createUserDto: CreateUserDto) {
-    const userByEmail = await this.userRepository.findOneBy({
+    const userByEmail = await this.userModel.findOne({
       email: createUserDto.email,
     });
-    if (userByEmail) {
+    console.log(userByEmail);
+    if (userByEmail)
       throw new HttpException('email already registered', HttpStatus.CONFLICT);
-    }
-    const userByUserName = await this.userRepository.findOneBy({
+    const userByNickName = await this.userModel.findOne({
       userName: createUserDto.userName,
     });
-    if (userByUserName)
+    if (userByNickName)
       throw new HttpException(
-        'user name already registered',
+        'userName already registered',
         HttpStatus.CONFLICT,
       );
-    const user = this.userRepository.create(createUserDto);
-    await this.userRepository.save(user);
-    return user;
+    createUserDto.password = await hashPassword(createUserDto.password);
+    const user = await this.userModel.create(createUserDto);
+    await user.save();
   }
 
   async findAll() {
-    const users = await this.userRepository.find();
-    console.log(users);
-    return users;
+    return this.userModel.find().select('-password');
   }
 
-  findOne(id: number) {
-    return this.userRepository.findOneBy({ id });
+  findOne(id: string) {
+    return this.userModel.findById(id);
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
+  update(id: string, updateUserDto: UpdateUserDto) {}
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  softDelete(id: string) {
+    return this.userModel.findByIdAndUpdate(id, { isActive: false });
   }
 }
