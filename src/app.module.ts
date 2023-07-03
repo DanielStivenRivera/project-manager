@@ -2,23 +2,21 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './users/entities/user.entity';
+import { Config } from './config/config';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
   imports: [
     UsersModule,
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'postgres',
-      entities: [User],
-      database: 'project_manager',
-      password: 'postgres',
-    }),
+    MongooseModule.forRoot(
+      `mongodb+srv://${Config.DB_USER}:${Config.DB_PASSWORD}@bases.554ve.mongodb.net/project_manager?retryWrites=true&w=majority`,
+    ),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: 'DB_PASSWORD', useValue: process.env.DB_PASSWORD },
+    { provide: 'DB_USER', useValue: process.env.DB_USER },
+  ],
 })
 export class AppModule {}
