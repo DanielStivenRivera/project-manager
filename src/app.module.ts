@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { Config } from './config/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { MongooseModule } from '@nestjs/mongoose';
     MongooseModule.forRoot(
       `mongodb+srv://${Config.DB_USER}:${Config.DB_PASSWORD}@bases.554ve.mongodb.net/project_manager?retryWrites=true&w=majority`,
     ),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [
